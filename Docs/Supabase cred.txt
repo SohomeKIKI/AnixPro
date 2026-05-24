@@ -1,0 +1,17 @@
+Supabase:
+Project : AnixPro
+pass: Sohome@Srim12345
+
+Client ID:
+
+test.apps.googleusercontent.com
+
+
+Client Secret:
+
+test-secret-key-123
+
+Client ID
+test.apps.discord.com
+Client Secret
+testdiscord

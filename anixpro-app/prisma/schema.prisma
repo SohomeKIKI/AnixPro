@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ──────────────────────────────────────────────────────────
+// PROFILES
+// ──────────────────────────────────────────────────────────
+model Profile {
+  id         String   @id @db.Uuid
+  email      String
+  name       String?
+  username   String?  @unique
+  avatarUrl  String?  @map("avatar_url")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  habits        Habit[]
+  habitLogs     HabitLog[]
+  journal       Journal[]
+  projects      Project[]
+  tasks         Task[]
+  bucketList    BucketList[]
+  notes         Note[]
+  publicSettings PublicSettings?
+  focusSessions FocusSession[]
+
+  @@map("profiles")
+}
+
+// ──────────────────────────────────────────────────────────
+// HABITS
+// ──────────────────────────────────────────────────────────
+model Habit {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String
+  frequency String   @default("daily")
+  color     String   @default("#f59e0b")
+  icon      String   @default("⚡")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  profile   Profile    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs      HabitLog[]
+
+  @@index([userId])
+  @@map("habits")
+}
+
+// ──────────────────────────────────────────────────────────
+// HABIT LOGS
+// ──────────────────────────────────────────────────────────
+model HabitLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  habitId   String   @map("habit_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  date      DateTime @default(now()) @db.Date
+  completed Boolean  @default(false)
+
+  // Relations
+  habit   Habit   @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([userId])
+  @@index([habitId])
+  @@index([date])
+  @@map("habit_logs")
+}
+
+// ──────────────────────────────────────────────────────────
+// JOURNAL
+// ──────────────────────────────────────────────────────────
+model Journal {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  content   String
+  mood      String   @default("neutral")
+  summary   String?
+  sentiment String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("journal")
+}
+
+// ──────────────────────────────────────────────────────────
+// PROJECTS
+// ──────────────────────────────────────────────────────────
+model Project {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  title       String
+  description String?
+  status      String   @default("active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@index([userId])
+  @@map("projects")
+}
+
+// ──────────────────────────────────────────────────────────
+// TASKS
+// ──────────────────────────────────────────────────────────
+model Task {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  projectId String?   @map("project_id") @db.Uuid
+  title     String
+  deadline  DateTime? @db.Timestamptz()
+  time      String?                       // e.g. "14:30", "09:00"
+  place     String?                       // e.g. "Office", "Cafe", "Online"
+  person    String?                       // e.g. "John", "Team", "Client"
+  priority  String    @default("medium")
+  status    String    @default("todo")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  profile    Profile     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project    Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  bucketList BucketList?
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([status])
+  @@index([deadline])
+  @@map("tasks")
+}
+
+// ──────────────────────────────────────────────────────────
+// BUCKET LIST
+// ──────────────────────────────────────────────────────────
+model BucketList {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  goal      String
+  status    String   @default("pending")
+  taskId    String?  @unique @map("task_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task    Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("bucket_list")
+}
+
+// ──────────────────────────────────────────────────────────
+// NOTES
+// ──────────────────────────────────────────────────────────
+model Note {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String   @default("Untitled")
+  content   String   @default("")
+  summary   String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("notes")
+}
+
+// ──────────────────────────────────────────────────────────
+// PUBLIC SETTINGS
+// ──────────────────────────────────────────────────────────
+model PublicSettings {
+  userId      String  @id @map("user_id") @db.Uuid
+  isPublic    Boolean @default(false) @map("is_public")
+  showTasks   Boolean @default(true) @map("show_tasks")
+  showHabits  Boolean @default(true) @map("show_habits")
+
+  // Relations
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("public_settings")
+}
+
+// ──────────────────────────────────────────────────────────
+// FOCUS SESSIONS
+// ──────────────────────────────────────────────────────────
+model FocusSession {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  duration  Int      // duration in minutes
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("focus_sessions")
+}
