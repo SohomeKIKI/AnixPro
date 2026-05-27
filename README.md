@@ -2,6 +2,8 @@
 
 > Production-grade AI-powered personal dashboard. Dark, glassmorphic, fast.
 
+Joy Maa Durga
+
 ## Tech Stack
 | Layer | Technology |
 |---|---|
